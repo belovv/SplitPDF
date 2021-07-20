@@ -1,7 +1,10 @@
 package com.split;
 
+
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,21 +17,24 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Split {
+    private static final Logger logger = LoggerFactory.getLogger(Split.class);
+
     public static void main(String[] args) {
-        File input = new File("C:\\Users\\Vasil\\Desktop\\do\\one.pdf");
+        File input = new File(getFile());
         try {
             readAndWritePDF(input);
         } catch (Exception e) {
             e.printStackTrace();
+            logger.error(e.getLocalizedMessage());
         }
-        getFile();
     }
 
     private static String getFile() {
+        // Path path = FileSystems.getDefault().getPath("C:\\Users\\Vasil\\Desktop\\do");
         Path path = FileSystems.getDefault().getPath("");
         String file = null;
-        try (Stream<Path> streamDir = Files.find(path, 5,
-                (p, a) -> String.valueOf(p).endsWith(".pdf"))) {
+        try (Stream<Path> streamDir = Files.find(path, 1,
+                (p, a) -> String.valueOf(p).toLowerCase().endsWith(".pdf"))) {
             file = streamDir
                     .map(String::valueOf)
                     .collect(Collectors.joining());
@@ -52,6 +58,7 @@ public class Split {
             Matcher matcher = pattern.matcher(text);
             if (matcher.find()) {
                 number = matcher.group();
+                number = number.split(" ")[1];
             }
             outputDocument.importPage(inputDocument.getDocumentCatalog().getPages().get(page - 1));
             saveCloseCurrent(number, outputDocument);
@@ -63,16 +70,16 @@ public class Split {
 
     private static void saveCloseCurrent(String currentNo, PDDocument outputDocument) {
         if (currentNo != null) {
-            File file = new File("C:\\Users\\Vasil\\Desktop\\do\\" + currentNo + ".pdf");
+            File file = new File(currentNo + ".pdf");
             if (file.exists()) {
-                System.err.println("File " + file + " exists?!");
-                System.exit(-1);
-            }
-            try {
-                outputDocument.save(file);
-                outputDocument.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("File " + file + " exists!");
+            } else {
+                try {
+                    outputDocument.save(file);
+                    outputDocument.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
